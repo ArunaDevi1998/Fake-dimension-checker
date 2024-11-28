@@ -1,0 +1,68 @@
+Public FailureDimensionDict As New Scripting.Dictionary
+
+Private Sub ChkFakeDimnsn_Btn_Click()
+    
+    Failure_LstBox.Clear
+    Set FailureDimensionDict = New Scripting.Dictionary
+    FailureDimensionDict.RemoveAll
+    
+    'Check active document is drawimng document or not'
+    
+    Dim ActvDocumnt As Document: Set ActvDocumnt = CATIA.ActiveDocument
+    If TypeName(ActvDocumnt) <> "DrawingDocument" Then
+        MsgBox ("Please open catia drawing document")
+    End If
+    
+    'Get active drawing sheet'
+    
+    Dim DrawngDoc As DrawingDocument: Set DrawngDoc = ActvDocumnt
+    Dim ActvDrawingSht As DrawingSheet: Set ActvDrawingSht = DrawngDoc.Sheets.ActiveSheet
+    
+    'Get all fake dimensions in active sheet using selections'
+    
+    Dim Sel As Selection
+    Set Sel = CATIA.ActiveDocument.Selection
+    Sel.Clear
+    Sel.Add ActvDrawingSht
+    Sel.Search "Drafting.Dimension.Fake=TRUE"
+    
+    For IDX = 1 To Sel.Count
+        
+        Dim CurDim As DrawingDimension: Set CurDim = Sel.Item(IDX).Value
+        If FailureDimensionDict.Exists(CurDim.Name) = False Then
+            FailureDimensionDict.Add CurDim.Name, CurDim
+        End If
+        
+    Next
+    Sel.Clear
+    
+    'Add failure dimensions list into GUI'
+    
+    If FailureDimensionDict.Count > 0 Then
+        For Each DimStr In FailureDimensionDict.Keys
+            Failure_LstBox.AddItem (DimStr)
+        Next
+    End If
+    
+End Sub
+
+''Highlight failure dimension when click the entity name
+
+Private Sub Failure_LstBox_Click()
+    
+    Dim Sel As Selection
+    Set Sel = CATIA.ActiveDocument.Selection
+    Sel.Clear
+    
+    Dim SelectedValue As String: SelectedValue = Failure_LstBox.Value
+    If SelectedValue = "" Then
+        Exit Sub
+    End If
+    
+    If FailureDimensionDict.Exists(SelectedValue) = True Then
+        Dim CurDimObj As DrawingDimension: Set CurDimObj = FailureDimensionDict.Item(SelectedValue)
+        Sel.Add CurDimObj
+    End If
+    
+    
+End Sub
